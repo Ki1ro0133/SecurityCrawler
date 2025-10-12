@@ -242,26 +242,37 @@ class XianzhiCrawler {
             }
             // 在新标签页中打开文章
             const articlePage = await this.browser.newPage();
-            // 阻止非必要资源以加速加载
-            try {
-                await articlePage.route('**/*', (route) => {
-                    const req = route.request();
-                    const type = req.resourceType();
-                    // 核心内容在 HTML 中，阻止图片/媒体/字体/样式以提速；
-                    const block = ['image', 'media', 'font', 'stylesheet'];
-                    if (block.includes(type)) {
-                        return route.abort();
-                    }
-                    return route.continue();
-                });
-            } catch (e) {
-                // 路由可能在已设置时抛错，忽略
-            }
             if (this.aborted) {
                 try { await articlePage.close(); } catch {}
                 throw new Error('aborted');
             }
             await articlePage.goto(articleUrl, { waitUntil: 'load', timeout: 300000, referer: "https://xz.aliyun.com/" });
+            // 进一步等待页面与主体内容，避免过早读取
+            try { await articlePage.waitForLoadState('domcontentloaded', { timeout: 10000 }); } catch {}
+            try { await articlePage.waitForSelector('.ne-viewer-body', { timeout: 15000 }); } catch {}
+            // 页面级滚动触发懒加载/虚拟化渲染
+            try {
+                await articlePage.evaluate(async () => {
+                    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+                    for (let i = 0; i < 10; i++) {
+                        window.scrollBy(0, Math.max(200, window.innerHeight * 0.8));
+                        await sleep(100);
+                    }
+                    window.scrollTo(0, document.body.scrollHeight);
+                    await sleep(150);
+                });
+            } catch {}
+            // 等待主体内容长度短暂稳定
+            try {
+                await articlePage.waitForFunction(() => {
+                    const el = document.querySelector('.ne-viewer-body');
+                    if (!el) return false;
+                    const len = (el.innerText || '').replace(/\s+/g, '').length;
+                    const st = (window.__mdStabilize ||= { last: 0, stable: 0 });
+                    if (len === st.last) st.stable++; else { st.last = len; st.stable = 0; }
+                    return st.stable >= 2;
+                }, { timeout: 4000 });
+            } catch {}
             // 提取文章标题
             let title = '';
             try {
@@ -301,6 +312,84 @@ class XianzhiCrawler {
             try {
                 // 优先使用 ne-viewer-body 获取HTML内容
                 const contentElement = articlePage.locator('.ne-viewer-body').first();
+                // 等待代码块渲染完成并尽量取消高度限制，滚动以触发完整渲染
+                try {
+                    await articlePage.waitForSelector('.cm-content', { timeout: 2000 });
+                    await articlePage.evaluate(async () => {
+                        const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+                        // 取消高度限制，避免只渲染部分行
+                        document.querySelectorAll('.ne-codeblock-height-limit').forEach(el => {
+                            el.classList.remove('ne-codeblock-height-limit');
+                        });
+                        // 解除滚动容器高度限制
+                        const scrollers = Array.from(document.querySelectorAll('.cm-scroller'));
+                        scrollers.forEach(el => { el.style.maxHeight = 'none'; });
+                        // 将代码块滚动到视区触发渲染
+                        document.querySelectorAll('.ne-card[data-card-name="codeblock"]').forEach(el => el.scrollIntoView({ block: 'center' }));
+                        const countLines = () => document.querySelectorAll('.cm-content .cm-line').length;
+                        let prev = countLines();
+                        // 多次滚动触发虚拟化渲染更多行，直到行数稳定
+                        for (let i = 0; i < 10; i++) {
+                            scrollers.forEach(el => { el.scrollTop = el.scrollHeight; });
+                            await sleep(160);
+                            const curr = countLines();
+                            if (curr <= prev) break;
+                            prev = curr;
+                        }
+                        // 将 CodeMirror 代码块转换为静态 pre/code，确保后续 HTML 转换完整
+                        const blocks = Array.from(document.querySelectorAll('.ne-card[data-card-name="codeblock"]'));
+                        const normalizeLang = (lang) => {
+                            const l = (lang || '').toLowerCase();
+                            if (l === 'shell') return 'bash';
+                            if (l === 'plain' || l === 'plaintext' || l === 'text') return '';
+                            return l;
+                        };
+                        const getLineText = (node) => {
+                            let out = '';
+                            const walk = (n) => {
+                                if (!n) return;
+                                if (n.nodeType === 3) {
+                                    out += (n.textContent || '');
+                                } else if (n.nodeType === 1) {
+                                    if (n.tagName && n.tagName.toLowerCase() === 'br') return;
+                                    for (let c of n.childNodes) walk(c);
+                                }
+                            };
+                            walk(node);
+                            return out.replace(/\u200B/g, '');
+                        };
+                        blocks.forEach(block => {
+                            const modeEl = block.querySelector('[data-codeblock-mode]') || block.querySelector('.cm-content');
+                            const lang = normalizeLang(modeEl ? (modeEl.getAttribute('data-codeblock-mode') || modeEl.getAttribute('data-language') || '') : '');
+                            const lineEls = block.querySelectorAll('.cm-line');
+                            let lines = [];
+                            if (lineEls && lineEls.length) {
+                                lines = Array.from(lineEls).map(le => getLineText(le));
+                            } else {
+                                const cmContent = block.querySelector('.cm-content');
+                                if (cmContent) {
+                                    for (let child of cmContent.childNodes) {
+                                        lines.push(getLineText(child));
+                                    }
+                                } else {
+                                    const inner = block.querySelector('.ne-codeblock-inner') || block;
+                                    const txt = (inner.textContent || '').replace(/\u200B/g, '');
+                                    lines = txt.split(/\r?\n/);
+                                }
+                            }
+                            const codeText = lines.join('\n').replace(/\r\n?/g, '\n');
+                            const pre = document.createElement('pre');
+                            const code = document.createElement('code');
+                            if (lang) code.setAttribute('data-language', lang);
+                            code.textContent = codeText;
+                            pre.appendChild(code);
+                            block.innerHTML = '';
+                            block.appendChild(pre);
+                        });
+                    });
+                    // 再给一小段时间让 DOM 稳定
+                    await this.sleep(100);
+                } catch {}
 
                 const htmlContent = await contentElement.innerHTML();
 

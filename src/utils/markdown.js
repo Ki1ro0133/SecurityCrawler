@@ -210,6 +210,29 @@ function convertElementToMarkdown(tagName, attributes, content, context = {}) {
     case 'ne-h6': return `\n###### ${content}\n\n`;
     case 'ne-p': return content ? `${content}\n\n` : '';
     case 'ne-hole': return content;
+    case 'ne-alert-hole': {
+      // 作为块级容器，保证与周围内容有分隔
+      const inner = (content || '').replace(/\n{3,}/g, '\n\n');
+      return `\n${inner}\n`;
+    }
+    case 'ne-alert': {
+      // 将告警内容转为 Markdown 引用块，避免行首 “#” 变为标题
+      const raw = (content || '')
+        .replace(/\r\n?/g, '\n')
+        .replace(/[\u200B\uFEFF]/g, '')
+        .replace(/\n{3,}/g, '\n\n');
+      const lines = raw.split('\n');
+      const quote = lines.map(line => {
+        const t = line.replace(/[\s\u00A0]+$/g, '');
+        if (!t.trim()) return '>';
+        // 保护常见 Markdown 触发符号
+        let s = t.replace(/^#/g, '\\#')
+                 .replace(/^(-\s)/, '\\$1')
+                 .replace(/^(\d+)\.\s/, (m, n) => `\\${n}. `);
+        return `> ${s}`;
+      }).join('\n');
+      return `\n${quote}\n\n`;
+    }
     case 'ne-text': {
       let styled = content;
       if (attributes['ne-bold'] === 'true') styled = `**${styled}**`;

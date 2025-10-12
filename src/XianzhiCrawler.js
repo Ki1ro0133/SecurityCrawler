@@ -242,6 +242,21 @@ class XianzhiCrawler {
             }
             // 在新标签页中打开文章
             const articlePage = await this.browser.newPage();
+            // 阻止非必要资源以加速加载
+            try {
+                await articlePage.route('**/*', (route) => {
+                    const req = route.request();
+                    const type = req.resourceType();
+                    // 核心内容在 HTML 中，阻止图片/媒体/字体/样式以提速；
+                    const block = ['image', 'media'];
+                    if (block.includes(type)) {
+                        return route.abort();
+                    }
+                    return route.continue();
+                });
+            } catch (e) {
+                // 路由可能在已设置时抛错，忽略
+            }
             if (this.aborted) {
                 try { await articlePage.close(); } catch {}
                 throw new Error('aborted');

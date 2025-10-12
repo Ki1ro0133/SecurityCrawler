@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "gui": "node server.js",
+    "web": "node server.js",
     "images-only": "node index.js --images-only",
     "range-2025Q3": "node index.js --start-date=2025-07-01 --end-date=2025-09-30 --max-pages=10",
     "after-2024": "node index.js --target-date=2024-01-01 --max-pages=5",

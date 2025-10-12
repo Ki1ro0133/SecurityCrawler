@@ -4,7 +4,7 @@
 
 - 采用Playwright作为基础爬虫框架，可以有效绕过最新版先知社区的反爬机制。
 - 因为最新版先知社区现在文章采用ne-viewer作为文章渲染工具，针对该html标签自定义一套markdown转换。
-- 图片本地化：图片本地化与文章爬取不统一进行，使用 `npm run images-only` 进行图片本地化。
+- 实现了web模式进行爬虫
 
 ## 目录
 - [环境要求](#环境要求)
@@ -26,9 +26,13 @@ npm run install-browsers
 ```
 
 ## 快速开始
-- 默认启动（使用 `config.json` 或默认值）：
+- 默认启动（CLI模式）（使用 `config.json` 或默认值）：
 ```bash
 npm start
+```
+- 启动Web模式（使用 `config.json` 或默认值）：
+```bash
+npm run web
 ```
 - 仅本地化 `papers/*.md` 中的远程图片（不爬取）：
 ```bash

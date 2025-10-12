@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>先知社区爬虫</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel-bg: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --border: #1f2937;
+        --accent: #3b82f6;
+        --success: #22c55e;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --grad-start: #0ea5e9;
+        --grad-end: #3b82f6;
+        --btn-bg: #1f2937;
+        --btn-secondary-bg: #374151;
+        --btn-border: #4b5563;
+        --form-bg: #0b1220;
+        --code-bg: #0b1220;
+        --scroll-thumb: #334155;
+      }
+      :root[data-theme="light"] {
+        --bg: #f8fafc;
+        --panel-bg: #ffffff;
+        --text: #0f172a;
+        --muted: #475569;
+        --border: #e2e8f0;
+        --accent: #2563eb;
+        --success: #16a34a;
+        --danger: #dc2626;
+        --warning: #d97706;
+        --grad-start: #93c5fd;
+        --grad-end: #60a5fa;
+        --btn-bg: #f3f4f6;
+        --btn-secondary-bg: #e5e7eb;
+        --btn-border: #d1d5db;
+        --form-bg: #f9fafb;
+        --code-bg: #f3f4f6;
+        --scroll-thumb: #cbd5e1;
+      }
+      body { font-family: -apple-system, system-ui, Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+      .container { max-width: 1080px; margin: 0 auto; padding: 20px; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: linear-gradient(90deg, var(--grad-start), var(--grad-end)); color: #fff; }
+      .brand { font-size: 18px; font-weight: 600; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+      .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+      h3 { margin: 0; font-size: 16px; }
+      .controls { display: flex; gap: 10px; }
+      .btn { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text); cursor: pointer; }
+      .btn:hover { filter: brightness(1.1); }
+      .btn-primary { background: var(--accent); border-color: #2563eb; }
+      .btn-danger { background: var(--danger); border-color: #dc2626; }
+      .btn-secondary { background: var(--btn-secondary-bg); border-color: var(--btn-border); }
+      /* 更柔和的小型按钮样式 */
+      .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 6px; }
+      .btn-ghost { background: transparent; border-color: var(--btn-border); color: var(--text); }
+      .btn-ghost:hover { background: var(--btn-bg); }
+      .btn-outline-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+      .btn-outline-danger:hover { background: var(--danger); color: #fff; }
+      .badge { padding: 4px 8px; border-radius: 999px; font-size: 12px; }
+      .badge-idle { background: #374151; color: #e5e7eb; }
+      .badge-running { background: var(--accent); color: #fff; }
+      .badge-complete { background: var(--success); color: #052e12; }
+      .badge-error { background: var(--danger); color: #fff; }
+      ul { list-style: none; padding: 0; margin: 0; }
+      li { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px; border-bottom: 1px dashed var(--border); }
+      li a { color: var(--text); text-decoration: none; }
+      li a:hover { text-decoration: underline; }
+      .item-meta { color: var(--muted); font-size: 12px; }
+      .scroll-panel { max-height: 280px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+      .scroll-panel::-webkit-scrollbar { width: 10px; height: 10px; }
+      .scroll-panel::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 8px; }
+      .scroll-panel::-webkit-scrollbar-track { background: transparent; }
+      .md-viewer { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; line-height: 1.7; }
+      .md-viewer h1, .md-viewer h2, .md-viewer h3 { margin-top: 16px; }
+      .md-viewer pre { background: #0b1220; padding: 10px; overflow: auto; border-radius: 8px; }
+      .md-viewer code { background: #0b1220; padding: 2px 6px; border-radius: 6px; }
+      .md-viewer a { color: var(--accent); }
+      .md-viewer blockquote { border-left: 3px solid var(--border); margin: 8px 0; padding-left: 10px; color: var(--muted); }
+      /* 表单与开关 */
+      .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .form-item { display: flex; align-items: center; gap: 8px; background: var(--form-bg); border: 1px solid var(--border); padding: 8px 10px; border-radius: 8px; }
+      .form-item label { font-size: 12px; color: var(--muted); }
+      .form-item input[type="number"], .form-item input[type="date"] { background: var(--form-bg); border: 1px solid var(--border); color: var(--text); padding: 6px 8px; border-radius: 6px; width: 100%; }
+      .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
+      .switch input { opacity: 0; width: 0; height: 0; }
+      .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #374151; transition: .2s; border-radius: 999px; }
+      .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; transition: .2s; border-radius: 50%; }
+      .switch input:checked + .slider { background: var(--accent); }
+      .switch input:checked + .slider:before { transform: translateX(18px); }
+      .switch-label { font-size: 12px; color: var(--muted); }
+      /* 进度条与日志 */
+      .progress { margin-top: 10px; height: 8px; background: #0b1220; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+      .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #3b82f6); transition: width .25s ease; }
+      #logsList li { gap: 10px; }
+      .log-tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; }
+      .log-info { background: #374151; color: #e5e7eb; }
+      .log-success { background: #16a34a; color: #052e12; }
+      .log-error { background: #ef4444; color: #fff; }
+      .log-file { background: #3b82f6; color: #fff; }
+      .log-image { background: #38bdf8; color: #082f49; }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="brand">先知社区爬虫</div>
+      <button id="themeToggle" class="btn btn-secondary">切换主题</button>
+    </div>
+    <div class="container">
+      <div class="panel" id="settingsPanel">
+        <div class="panel-header">
+          <h3>参数设置</h3>
+          <span class="item-meta">运行前可配置</span>
+        </div>
+        <div class="form-grid">
+          <div class="form-item">
+            <label for="maxPages">最大页面数</label>
+            <input type="number" id="maxPages" min="1" value="3" />
+          </div>
+          <div class="form-item">
+            <label for="concurrency">并发数</label>
+            <input type="number" id="concurrency" min="1" value="3" />
+          </div>
+          <div class="form-item">
+            <label class="switch"><input type="checkbox" id="fetchFullContent" checked /><span class="slider"></span></label>
+            <span class="switch-label">拉取完整内容</span>
+          </div>
+          <div class="form-item">
+            <label class="switch"><input type="checkbox" id="imagesOnly" /><span class="slider"></span></label>
+            <span class="switch-label">仅图片模式</span>
+          </div>
+          <div class="form-item">
+            <label class="switch"><input type="checkbox" id="image" checked /><span class="slider"></span></label>
+            <span class="switch-label">本地化图片</span>
+          </div>
+          <div class="form-item">
+            <label for="startDate">开始日期</label>
+            <input type="date" id="startDate" />
+          </div>
+          <div class="form-item">
+            <label for="endDate">结束日期</label>
+            <input type="date" id="endDate" />
+          </div>
+          <div class="form-item">
+            <label for="targetDate">目标日期</label>
+            <input type="date" id="targetDate" />
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <h3>控制台</h3>
+          <span id="statusBadge" class="badge badge-idle">未运行</span>
+        </div>
+        <div class="controls">
+          <button id="startBtn" class="btn btn-primary">开始爬取</button>
+          <button id="stopBtn" class="btn btn-danger">停止爬取</button>
+        </div>
+        <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+      </div>
+
+      <div class="grid" style="margin-top: 16px;">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>运行输出</h3>
+            <span class="item-meta">事件与日志</span>
+          </div>
+          <div class="scroll-panel"><ul id="logsList"></ul></div>
+          <div class="panel-header" style="margin-top: 10px;">
+            <h3>实时文章</h3>
+            <span class="item-meta">最新在上</span>
+          </div>
+          <div class="scroll-panel"><ul id="liveList"></ul></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <h3>已保存文件</h3>
+            <span class="item-meta">来自 papers/</span>
+          </div>
+          <div class="scroll-panel"><ul id="filesList"></ul></div>
+          <div class="panel-footer" style="margin-top:8px; display:flex; align-items:center; gap:8px;">
+            <button id="prevPage" class="btn btn-secondary">上一页</button>
+            <span id="pageInfo" class="item-meta">第 1 页</span>
+            <button id="nextPage" class="btn btn-secondary">下一页</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/app.js"></script>
+  </body>
+  </html>

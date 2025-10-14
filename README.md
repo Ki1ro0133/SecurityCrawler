@@ -10,6 +10,7 @@
 - [环境要求](#环境要求)
 - [安装](#安装)
 - [快速开始](#快速开始)
+- [Web模式示意图](#Web模式示意图)
 - [参数与用法](#参数与用法)
 - [配置文件](#配置文件)
 - [输出说明](#输出说明)
@@ -47,7 +48,18 @@ npm run range-2025Q3
 npm run after-2024
 ```
 
+## Web模式示意图
+
+- 首页
+
+  ![image-20251014155727433](images/README.assets/image-20251014155727433.png)
+
+- 简单的预览
+
+  ![image-20251014155850201](images/README.assets/image-20251014155850201.png)
+
 ## 参数与用法
+
 三种来源的优先级：CLI > 环境变量 > `config.json`。
 
 - CLI 参数
@@ -61,10 +73,10 @@ npm run after-2024
 
 示例：
 ```bash
-node xianzhi_crawler.js --start-date=2025-07-01 --end-date=2025-09-30 --max-pages=10
-node xianzhi_crawler.js --target-date=2024-01-01 --max-pages=5
-node xianzhi_crawler.js --images-only
-node xianzhi_crawler.js --target-date=2024-01-01 --max-pages=8 --concurrency=5
+node index.js --start-date=2025-07-01 --end-date=2025-09-30 --max-pages=10
+node index.js --target-date=2024-01-01 --max-pages=5
+node index.js --images-only
+node index.js --target-date=2024-01-01 --max-pages=8 --concurrency=5
 ```
 
 - 环境变量（在 CLI 未提供时生效，接受多种大小写/风格）
@@ -81,7 +93,7 @@ node xianzhi_crawler.js --target-date=2024-01-01 --max-pages=8 --concurrency=5
 export START_DATE=2025-07-01
 export END_DATE=2025-09-30
 export MAX_PAGES=8
-node xianzhi_crawler.js
+node index.js
 ```
 
 ## 配置文件

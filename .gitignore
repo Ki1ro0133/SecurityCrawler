@@ -19,7 +19,11 @@ yarn-error.log*
 # Generated summaries (optional to ignore if you prefer)
 SUMMARY*.md
 papers/
+data/
 package-lock.json
 
 # dev log
 devlog.txt
+
+# copilot
+.github/

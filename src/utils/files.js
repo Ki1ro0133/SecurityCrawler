@@ -1,5 +1,10 @@
 const fs = require('fs');
 const path = require('path');
+const {
+  generateFileName,
+  generateIndexMarkdown,
+  generateSingleArticleMarkdown,
+} = require('./formatter');
 
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
@@ -7,15 +12,27 @@ function ensureDir(dirPath) {
   }
 }
 
-function writeArticleMarkdown(article, baseDir, generateSingleArticleMarkdown, generateFileName) {
-  const papersDir = path.join(baseDir, 'papers');
+function writeArticleMarkdown({ article, outputDir, siteMeta }) {
+  const papersDir = path.join(outputDir, 'papers');
   ensureDir(papersDir);
 
   const fileName = generateFileName(article);
   const filePath = path.join(papersDir, fileName);
-  const articleMarkdown = generateSingleArticleMarkdown(article);
+  const articleMarkdown = generateSingleArticleMarkdown(article, siteMeta);
 
-  if (fs.existsSync(filePath)) {
+  const previousContent = fs.existsSync(filePath)
+    ? fs.readFileSync(filePath, 'utf8')
+    : null;
+  const hasIncomingContent = String(article && article.content ? article.content : '').trim().length > 0;
+  const previousWasPlaceholder = previousContent
+    ? previousContent.includes('> 暂无完整内容，请点击原文链接查看。')
+    : false;
+
+  if (previousContent === articleMarkdown) {
+    return { fileName, wrote: false };
+  }
+
+  if (previousContent && !previousWasPlaceholder && !hasIncomingContent) {
     return { fileName, wrote: false };
   }
 
@@ -23,25 +40,31 @@ function writeArticleMarkdown(article, baseDir, generateSingleArticleMarkdown, g
   return { fileName, wrote: true };
 }
 
-function writeRealtimeSummary(articles, baseUrl, generateFileName, baseDir) {
-  const summaryPath = path.join(baseDir, 'SUMMARY-REALTIME.md');
-  const { generateIndexMarkdown } = require('./formatter');
-  const summaryContent = generateIndexMarkdown(articles, baseUrl, generateFileName);
-  fs.writeFileSync(summaryPath, summaryContent, 'utf8');
-  return summaryPath;
+function writeArticlesManifest({ articles, outputDir }) {
+  const manifestPath = path.join(outputDir, 'articles.json');
+  const serializedArticles = (articles || []).map((article) => ({
+    site: article.site,
+    title: article.title || '',
+    fileName: article.fileName || '',
+    category: article.category || '',
+    author: article.author || '',
+    publishTime: article.publishTime || '',
+    link: article.link || '',
+    extractedAt: article.extractedAt || '',
+  }));
+  fs.writeFileSync(manifestPath, JSON.stringify(serializedArticles, null, 2), 'utf8');
+  return manifestPath;
 }
 
-function writeFinalSummaryAndFailures(articles, baseUrl, failures, baseDir) {
+function writeFinalSummaryAndFailures({ articles, failures, outputDir, siteMeta }) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const finalIndexPath = path.join(baseDir, 'SUMMARY-' + timestamp + '.md');
-  const { generateIndexMarkdown } = require('./formatter');
-  const { generateFileName } = require('./formatter');
-  const indexContent = generateIndexMarkdown(articles, baseUrl, generateFileName);
+  const finalIndexPath = path.join(outputDir, `SUMMARY-${timestamp}.md`);
+  const indexContent = generateIndexMarkdown(articles, siteMeta.baseUrl, generateFileName, siteMeta);
   fs.writeFileSync(finalIndexPath, indexContent, 'utf8');
 
   let failPath = null;
   if (failures && failures.length) {
-    failPath = path.join(baseDir, `failures-${timestamp}.json`);
+    failPath = path.join(outputDir, `failures-${timestamp}.json`);
     fs.writeFileSync(failPath, JSON.stringify(failures, null, 2), 'utf8');
   }
 
@@ -49,7 +72,7 @@ function writeFinalSummaryAndFailures(articles, baseUrl, failures, baseDir) {
 }
 
 module.exports = {
+  writeArticlesManifest,
   writeArticleMarkdown,
-  writeRealtimeSummary,
   writeFinalSummaryAndFailures,
 };

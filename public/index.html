@@ -3,200 +3,1069 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>先知社区爬虫</title>
+    <title>SecurityCrawler Console</title>
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap');
+
       :root {
-        --bg: #0f172a;
-        --panel-bg: #111827;
-        --text: #e5e7eb;
-        --muted: #9ca3af;
-        --border: #1f2937;
-        --accent: #3b82f6;
-        --success: #22c55e;
-        --danger: #ef4444;
-        --warning: #f59e0b;
-        --grad-start: #0ea5e9;
-        --grad-end: #3b82f6;
-        --btn-bg: #1f2937;
-        --btn-secondary-bg: #374151;
-        --btn-border: #4b5563;
-        --form-bg: #0b1220;
-        --code-bg: #0b1220;
-        --scroll-thumb: #334155;
+        color-scheme: light;
+        --bg: #f4f0e8;
+        --bg-2: #e9e1d4;
+        --panel: rgba(252, 249, 244, 0.86);
+        --panel-strong: rgba(255, 252, 246, 0.96);
+        --panel-muted: rgba(244, 238, 229, 0.82);
+        --text: #1f1a15;
+        --muted: #786d63;
+        --line: rgba(63, 49, 35, 0.12);
+        --line-strong: rgba(63, 49, 35, 0.2);
+        --accent: #866547;
+        --accent-2: #2f5069;
+        --success: #316d52;
+        --danger: #995153;
+        --warning: #a17335;
+        --shadow: 0 26px 60px rgba(62, 45, 27, 0.08);
+        --scroll-thumb: rgba(134, 101, 71, 0.22);
       }
-      :root[data-theme="light"] {
-        --bg: #f8fafc;
-        --panel-bg: #ffffff;
-        --text: #0f172a;
-        --muted: #475569;
-        --border: #e2e8f0;
-        --accent: #2563eb;
-        --success: #16a34a;
-        --danger: #dc2626;
-        --warning: #d97706;
-        --grad-start: #93c5fd;
-        --grad-end: #60a5fa;
-        --btn-bg: #f3f4f6;
-        --btn-secondary-bg: #e5e7eb;
-        --btn-border: #d1d5db;
-        --form-bg: #f9fafb;
-        --code-bg: #f3f4f6;
-        --scroll-thumb: #cbd5e1;
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #13110f;
+        --bg-2: #181614;
+        --panel: rgba(27, 24, 22, 0.88);
+        --panel-strong: rgba(34, 31, 28, 0.96);
+        --panel-muted: rgba(24, 22, 20, 0.86);
+        --text: #f2ece3;
+        --muted: #ab9d90;
+        --line: rgba(242, 236, 227, 0.08);
+        --line-strong: rgba(242, 236, 227, 0.14);
+        --accent: #d3b08d;
+        --accent-2: #95b4cf;
+        --success: #83c3a0;
+        --danger: #eb9b98;
+        --warning: #d3af72;
+        --shadow: 0 30px 80px rgba(0, 0, 0, 0.32);
+        --scroll-thumb: rgba(211, 176, 141, 0.18);
       }
-      body { font-family: -apple-system, system-ui, Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
-      .container { max-width: 1080px; margin: 0 auto; padding: 20px; }
-      .topbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: linear-gradient(90deg, var(--grad-start), var(--grad-end)); color: #fff; }
-      .brand { font-size: 18px; font-weight: 600; }
-      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-      .panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-      .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-      h3 { margin: 0; font-size: 16px; }
-      .controls { display: flex; gap: 10px; }
-      .btn { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--text); cursor: pointer; }
-      .btn:hover { filter: brightness(1.1); }
-      .btn-primary { background: var(--accent); border-color: #2563eb; }
-      .btn-danger { background: var(--danger); border-color: #dc2626; }
-      .btn-secondary { background: var(--btn-secondary-bg); border-color: var(--btn-border); }
-      /* 更柔和的小型按钮样式 */
-      .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 6px; }
-      .btn-ghost { background: transparent; border-color: var(--btn-border); color: var(--text); }
-      .btn-ghost:hover { background: var(--btn-bg); }
-      .btn-outline-danger { background: transparent; color: var(--danger); border-color: var(--danger); }
-      .btn-outline-danger:hover { background: var(--danger); color: #fff; }
-      .badge { padding: 4px 8px; border-radius: 999px; font-size: 12px; }
-      .badge-idle { background: #374151; color: #e5e7eb; }
-      .badge-running { background: var(--accent); color: #fff; }
-      .badge-complete { background: var(--success); color: #052e12; }
-      .badge-error { background: var(--danger); color: #fff; }
-      ul { list-style: none; padding: 0; margin: 0; }
-      li { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px; border-bottom: 1px dashed var(--border); }
-      li a { color: var(--text); text-decoration: none; }
-      li a:hover { text-decoration: underline; }
-      .item-meta { color: var(--muted); font-size: 12px; }
-      .scroll-panel { max-height: 280px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
-      .scroll-panel::-webkit-scrollbar { width: 10px; height: 10px; }
-      .scroll-panel::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 8px; }
-      .scroll-panel::-webkit-scrollbar-track { background: transparent; }
-      .md-viewer { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; line-height: 1.7; }
-      .md-viewer h1, .md-viewer h2, .md-viewer h3 { margin-top: 16px; }
-      .md-viewer pre { background: #0b1220; padding: 10px; overflow: auto; border-radius: 8px; }
-      .md-viewer code { background: #0b1220; padding: 2px 6px; border-radius: 6px; }
-      .md-viewer a { color: var(--accent); }
-      .md-viewer blockquote { border-left: 3px solid var(--border); margin: 8px 0; padding-left: 10px; color: var(--muted); }
-      /* 表单与开关 */
-      .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-      .form-item { display: flex; align-items: center; gap: 8px; background: var(--form-bg); border: 1px solid var(--border); padding: 8px 10px; border-radius: 8px; }
-      .form-item label { font-size: 12px; color: var(--muted); }
-      .form-item input[type="number"], .form-item input[type="date"] { background: var(--form-bg); border: 1px solid var(--border); color: var(--text); padding: 6px 8px; border-radius: 6px; width: 100%; }
-      .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
-      .switch input { opacity: 0; width: 0; height: 0; }
-      .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #374151; transition: .2s; border-radius: 999px; }
-      .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; transition: .2s; border-radius: 50%; }
-      .switch input:checked + .slider { background: var(--accent); }
-      .switch input:checked + .slider:before { transform: translateX(18px); }
-      .switch-label { font-size: 12px; color: var(--muted); }
-      /* 进度条与日志 */
-      .progress { margin-top: 10px; height: 8px; background: #0b1220; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
-      .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #3b82f6); transition: width .25s ease; }
-      #logsList li { gap: 10px; }
-      .log-tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; }
-      .log-info { background: #374151; color: #e5e7eb; }
-      .log-success { background: #16a34a; color: #052e12; }
-      .log-error { background: #ef4444; color: #fff; }
-      .log-file { background: #3b82f6; color: #fff; }
-      .log-image { background: #38bdf8; color: #082f49; }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family: "Manrope", sans-serif;
+        background:
+          radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 11%, transparent), transparent 28%),
+          linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      body::before {
+        background-image:
+          linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 34px 34px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.22), transparent 86%);
+      }
+
+      body::after {
+        background:
+          radial-gradient(circle at 85% 10%, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 26%),
+          radial-gradient(circle at 20% 100%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 30%);
+        opacity: 0.72;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      code {
+        padding: 0.14em 0.42em;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--accent) 10%, transparent);
+        font-size: 0.92em;
+      }
+
+      .shell {
+        position: relative;
+        z-index: 1;
+        width: min(1400px, calc(100vw - 28px));
+        margin: 18px auto 34px;
+      }
+
+      .topbar,
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        background: var(--panel);
+        backdrop-filter: blur(18px);
+        box-shadow: var(--shadow);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 20px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 46px;
+        height: 46px;
+        border-radius: 15px;
+        border: 1px solid var(--line-strong);
+        background: linear-gradient(180deg, var(--panel-strong), color-mix(in srgb, var(--panel-strong) 76%, var(--accent) 24%));
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+      }
+
+      .brand-copy h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .brand-copy p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .topbar-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .topbar-note {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--panel-strong) 88%, transparent);
+      }
+
+      .topbar-note::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--success);
+        box-shadow: 0 0 0 6px color-mix(in srgb, var(--success) 14%, transparent);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.52fr) minmax(320px, 0.88fr);
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .hero-main {
+        position: relative;
+        overflow: hidden;
+        padding: 32px 32px 26px;
+      }
+
+      .hero-main::after {
+        content: "";
+        position: absolute;
+        right: -72px;
+        top: -58px;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+        opacity: 0.8;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 28px;
+        height: 1px;
+        background: currentColor;
+      }
+
+      .hero-main h2 {
+        max-width: 820px;
+        margin: 16px 0 0;
+        font-family: "Instrument Serif", serif;
+        font-size: clamp(40px, 5vw, 72px);
+        line-height: 0.94;
+        letter-spacing: -0.05em;
+        font-weight: 400;
+      }
+
+      .hero-main p {
+        max-width: 760px;
+        margin: 18px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.82;
+      }
+
+      .overview {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .overview-item {
+        padding: 14px 16px 16px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--panel-strong) 92%, transparent);
+      }
+
+      .overview-item span {
+        display: block;
+      }
+
+      .overview-label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .overview-value {
+        margin-top: 10px;
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+      }
+
+      .overview-value.is-text {
+        font-size: 16px;
+        line-height: 1.45;
+      }
+
+      .hero-side {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 22px;
+      }
+
+      .hero-side h3,
+      .section-title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .section-note {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.62;
+      }
+
+      .status-box {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--panel-strong) 92%, transparent);
+      }
+
+      .status-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .status-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .status-mini {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--panel-muted) 88%, transparent);
+      }
+
+      .status-mini strong,
+      .status-mini span {
+        display: block;
+      }
+
+      .status-mini span {
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .status-mini strong {
+        margin-top: 8px;
+        font-size: 14px;
+        letter-spacing: -0.02em;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .badge-idle {
+        background: color-mix(in srgb, var(--accent) 14%, transparent);
+        color: var(--muted);
+      }
+
+      .badge-running {
+        background: color-mix(in srgb, var(--accent-2) 16%, transparent);
+        color: var(--accent-2);
+      }
+
+      .badge-complete {
+        background: color-mix(in srgb, var(--success) 18%, transparent);
+        color: var(--success);
+      }
+
+      .badge-error {
+        background: color-mix(in srgb, var(--danger) 16%, transparent);
+        color: var(--danger);
+      }
+
+      .progress {
+        height: 10px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel-muted);
+      }
+
+      .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+        transition: width .25s ease;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .stack {
+        display: grid;
+        gap: 16px;
+      }
+
+      .section {
+        padding: 22px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .section-head small,
+      .item-meta,
+      .item-kicker {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .section-head small {
+        white-space: nowrap;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .form-item {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 84px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--panel-strong) 92%, transparent);
+      }
+
+      .form-item.form-item-wide {
+        grid-column: 1 / -1;
+      }
+
+      .form-item.toggle-item {
+        justify-content: center;
+      }
+
+      .form-item label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .form-item input[type="number"],
+      .form-item input[type="date"],
+      .form-item input[type="text"],
+      .form-item input[type="password"],
+      .form-item select,
+      .form-item textarea {
+        width: 100%;
+        padding: 12px 13px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: transparent;
+        color: var(--text);
+        outline: none;
+        transition: border-color .2s ease, background .2s ease, transform .2s ease;
+      }
+
+      .form-item input:focus,
+      .form-item select:focus,
+      .form-item textarea:focus {
+        border-color: var(--line-strong);
+        background: color-mix(in srgb, var(--accent) 4%, transparent);
+        transform: translateY(-1px);
+      }
+
+      .form-item textarea {
+        min-height: 118px;
+        resize: vertical;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      #pluginCustomFields {
+        display: contents;
+      }
+
+      .toggle-shell {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 28px;
+        flex-shrink: 0;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--accent) 18%, transparent);
+        transition: .2s;
+        cursor: pointer;
+      }
+
+      .slider::before {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--panel-strong);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+        transition: .2s;
+      }
+
+      .switch input:checked + .slider {
+        background: var(--accent);
+      }
+
+      .switch input:checked + .slider::before {
+        transform: translateX(22px);
+      }
+
+      .switch-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .switch-subtext,
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .scroll-panel {
+        overflow: auto;
+        max-height: 382px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--panel-strong) 94%, transparent);
+      }
+
+      .scroll-panel::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+
+      .scroll-panel::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: var(--scroll-thumb);
+      }
+
+      .data-list {
+        list-style: none;
+        margin: 0;
+        padding: 10px;
+      }
+
+      .data-list:empty::before,
+      .toc-list:empty::before {
+        content: attr(data-empty);
+        display: block;
+        padding: 30px 18px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .data-list li {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px 12px;
+        border-bottom: 1px solid var(--line);
+        transition: background .18s ease;
+      }
+
+      .data-list li:hover {
+        background: color-mix(in srgb, var(--accent) 4%, transparent);
+      }
+
+      .data-list li:last-child {
+        border-bottom: none;
+      }
+
+      .data-list li > div:first-child {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .data-list li > div:last-child {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        flex-shrink: 0;
+      }
+
+      .data-list strong {
+        display: block;
+        margin-bottom: 6px;
+        line-height: 1.5;
+        font-size: 14px;
+        letter-spacing: -0.02em;
+      }
+
+      .list-main {
+        display: grid;
+        gap: 6px;
+      }
+
+      .list-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .list-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .meta-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 9px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--panel-muted) 88%, transparent);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+
+      .log-main {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .log-text {
+        min-width: 0;
+        line-height: 1.6;
+        word-break: break-word;
+      }
+
+      .data-list a {
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .data-list a:hover {
+        color: var(--accent);
+      }
+
+      .log-tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 64px;
+        padding: 4px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .log-info {
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+        color: var(--muted);
+      }
+
+      .log-success {
+        background: color-mix(in srgb, var(--success) 18%, transparent);
+        color: var(--success);
+      }
+
+      .log-error {
+        background: color-mix(in srgb, var(--danger) 16%, transparent);
+        color: var(--danger);
+      }
+
+      .log-file {
+        background: color-mix(in srgb, var(--accent-2) 18%, transparent);
+        color: var(--accent-2);
+      }
+
+      .log-image {
+        background: color-mix(in srgb, var(--warning) 18%, transparent);
+        color: var(--warning);
+      }
+
+      .btn {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel-strong);
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 700;
+        transition: transform .18s ease, border-color .18s ease, background .18s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+        border-color: var(--line-strong);
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn-primary {
+        background: var(--text);
+        color: var(--panel-strong);
+        border-color: transparent;
+      }
+
+      .btn-danger {
+        color: var(--danger);
+        border-color: color-mix(in srgb, var(--danger) 26%, transparent);
+      }
+
+      .btn-secondary,
+      .btn-ghost {
+        background: transparent;
+      }
+
+      .btn-sm {
+        min-height: 34px;
+        padding: 0 11px;
+        font-size: 12px;
+        border-radius: 12px;
+      }
+
+      .btn-outline-danger {
+        color: var(--danger);
+        border-color: color-mix(in srgb, var(--danger) 26%, transparent);
+      }
+
+      .footer-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .footer-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      @media (max-width: 1120px) {
+        .hero,
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 780px) {
+        .shell {
+          width: min(100vw - 16px, 100%);
+          margin-top: 8px;
+        }
+
+        .topbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .topbar-meta {
+          justify-content: space-between;
+          flex-wrap: wrap;
+        }
+
+        .hero-main,
+        .hero-side,
+        .section {
+          padding: 18px;
+        }
+
+        .overview,
+        .form-grid,
+        .controls,
+        .status-summary {
+          grid-template-columns: 1fr;
+        }
+
+        .footer-nav,
+        .data-list li {
+          flex-direction: column;
+        }
+
+        .footer-actions,
+        .data-list li > div:last-child {
+          justify-content: space-between;
+          width: 100%;
+        }
+      }
     </style>
   </head>
   <body>
-    <div class="topbar">
-      <div class="brand">先知社区爬虫</div>
-      <button id="themeToggle" class="btn btn-secondary">切换主题</button>
-    </div>
-    <div class="container">
-      <div class="panel" id="settingsPanel">
-        <div class="panel-header">
-          <h3>参数设置</h3>
-          <span class="item-meta">运行前可配置</span>
-        </div>
-        <div class="form-grid">
-          <div class="form-item">
-            <label for="maxPages">最大页面数</label>
-            <input type="number" id="maxPages" min="1" value="3" />
-          </div>
-          <div class="form-item">
-            <label for="concurrency">并发数</label>
-            <input type="number" id="concurrency" min="1" value="3" />
-          </div>
-          <div class="form-item">
-            <label class="switch"><input type="checkbox" id="fetchFullContent" checked /><span class="slider"></span></label>
-            <span class="switch-label">拉取完整内容</span>
-          </div>
-          <div class="form-item">
-            <label class="switch"><input type="checkbox" id="imagesOnly" /><span class="slider"></span></label>
-            <span class="switch-label">仅图片模式</span>
-          </div>
-          <div class="form-item">
-            <label class="switch"><input type="checkbox" id="image" checked /><span class="slider"></span></label>
-            <span class="switch-label">本地化图片</span>
-          </div>
-          <div class="form-item">
-            <label for="startDate">开始日期</label>
-            <input type="date" id="startDate" />
-          </div>
-          <div class="form-item">
-            <label for="endDate">结束日期</label>
-            <input type="date" id="endDate" />
-          </div>
-          <div class="form-item">
-            <label for="targetDate">目标日期</label>
-            <input type="date" id="targetDate" />
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">SC</div>
+          <div class="brand-copy">
+            <h1>SecurityCrawler Console</h1>
+            <p>多站点采集与结果回看</p>
           </div>
         </div>
-      </div>
-      <div class="panel">
-        <div class="panel-header">
-          <h3>控制台</h3>
-          <span id="statusBadge" class="badge badge-idle">未运行</span>
+        <div class="topbar-meta">
+          <span class="topbar-note">实时推送已连接</span>
+          <button id="themeToggle" class="btn btn-secondary">切换主题</button>
         </div>
-        <div class="controls">
-          <button id="startBtn" class="btn btn-primary">开始爬取</button>
-          <button id="stopBtn" class="btn btn-danger">停止爬取</button>
-        </div>
-        <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
-      </div>
+      </header>
 
-      <div class="grid" style="margin-top: 16px;">
-        <div class="panel">
-          <div class="panel-header">
-            <h3>运行输出</h3>
-            <span class="item-meta">事件与日志</span>
+      <section class="hero">
+        <article class="card hero-main">
+          <div class="eyebrow">Operations</div>
+          <h2>采集控制台</h2>
+          <p>
+            围绕站点切换、任务参数、运行状态和结果回看组织界面，减少无关信息，让常用操作始终停留在视线中心。
+          </p>
+          <div class="overview">
+            <div class="overview-item">
+              <span class="overview-label">接入站点</span>
+              <span id="siteCountValue" class="overview-value">0</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">当前站点</span>
+              <span id="currentSiteValue" class="overview-value is-text">未选择</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">实时文章</span>
+              <span id="savedCountValue" class="overview-value">0</span>
+            </div>
+            <div class="overview-item">
+              <span class="overview-label">落盘文件</span>
+              <span id="fileCountValue" class="overview-value">0</span>
+            </div>
           </div>
-          <div class="scroll-panel"><ul id="logsList"></ul></div>
-          <div class="panel-header" style="margin-top: 10px;">
-            <h3>实时文章</h3>
-            <span class="item-meta">最新在上</span>
-          </div>
-          <div class="scroll-panel"><ul id="liveList"></ul></div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <h3>已保存文件</h3>
-            <span class="item-meta">来自 papers/</span>
-          </div>
-          <div class="scroll-panel"><ul id="filesList"></ul></div>
-          <div class="panel-footer" style="margin-top:8px; display:flex; align-items:center; gap:8px;">
-            <button id="prevPage" class="btn btn-secondary">上一页</button>
-            <span id="pageInfo" class="item-meta">第 1 页</span>
-            <button id="nextPage" class="btn btn-secondary">下一页</button>
-          </div>
-        </div>
-      </div>
+        </article>
 
-    </div>
+        <aside class="card hero-side">
+          <div>
+            <h3>运行状态</h3>
+            <p class="section-note">实时显示任务状态、进度和最近事件。</p>
+          </div>
+          <div class="status-box">
+            <div class="status-top">
+              <div>
+                <div class="section-title">任务状态</div>
+                <div class="section-note">开始、停止、失败与完成即时更新。</div>
+              </div>
+              <span id="statusBadge" class="badge badge-idle">未运行</span>
+            </div>
+            <div class="progress">
+              <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <div class="status-summary">
+              <div class="status-mini">
+                <span>观察方式</span>
+                <strong>实时事件流</strong>
+              </div>
+              <div class="status-mini">
+                <span>结果沉淀</span>
+                <strong>Markdown 文件</strong>
+              </div>
+            </div>
+          </div>
+          <div class="controls">
+            <button id="startBtn" class="btn btn-primary">开始爬取</button>
+            <button id="stopBtn" class="btn btn-danger">停止爬取</button>
+          </div>
+        </aside>
+      </section>
 
-    
+      <section class="workspace">
+        <div class="stack">
+          <section class="card section" id="settingsPanel">
+            <div class="section-head">
+              <div>
+                <h3 class="section-title">任务参数</h3>
+                <p class="section-note">切换站点后保留对应参数，自定义字段按插件配置加载。</p>
+              </div>
+              <small>运行前配置</small>
+            </div>
+            <div class="form-grid">
+              <div class="form-item">
+                <label for="siteSelect">站点</label>
+                <select id="siteSelect"></select>
+              </div>
+              <div class="form-item">
+                <label for="maxPages">最大页面数</label>
+                <input type="number" id="maxPages" min="1" value="3" />
+              </div>
+              <div class="form-item">
+                <label for="concurrency">并发数</label>
+                <input type="number" id="concurrency" min="1" value="3" />
+              </div>
+              <div class="form-item toggle-item">
+                <div class="toggle-shell">
+                  <div>
+                    <span class="switch-label">拉取完整内容</span>
+                    <span class="switch-subtext">优先抓取文章详情页正文</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="fetchFullContent" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-item toggle-item">
+                <div class="toggle-shell">
+                  <div>
+                    <span class="switch-label">仅图片模式</span>
+                    <span class="switch-subtext">跳过采集，只处理现有 Markdown 图片</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="imagesOnly" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-item toggle-item">
+                <div class="toggle-shell">
+                  <div>
+                    <span class="switch-label">本地化图片</span>
+                    <span class="switch-subtext">下载正文远程图片并改写引用</span>
+                  </div>
+                  <label class="switch">
+                    <input type="checkbox" id="image" checked />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-item">
+                <label for="startDate">开始日期</label>
+                <input type="date" id="startDate" />
+              </div>
+              <div class="form-item">
+                <label for="endDate">结束日期</label>
+                <input type="date" id="endDate" />
+              </div>
+              <div class="form-item">
+                <label for="targetDate">目标日期</label>
+                <input type="date" id="targetDate" />
+              </div>
+              <div id="pluginCustomFields"></div>
+            </div>
+          </section>
+
+          <section class="card section">
+            <div class="section-head">
+              <div>
+                <h3 class="section-title">运行日志</h3>
+                <p class="section-note">按时间倒序记录任务事件与异常信息。</p>
+              </div>
+              <small>最新事件在上</small>
+            </div>
+            <div class="scroll-panel">
+              <ul id="logsList" class="data-list" data-empty="还没有运行日志。启动一次任务后，这里会开始滚动记录事件。"></ul>
+            </div>
+          </section>
+        </div>
+
+        <div class="stack">
+          <section class="card section">
+            <div class="section-head">
+              <div>
+                <h3 class="section-title">实时文章</h3>
+                <p class="section-note">显示当前站点最新写入或恢复的文章索引。</p>
+              </div>
+              <small>仅当前站点</small>
+            </div>
+            <div class="scroll-panel">
+              <ul id="liveList" class="data-list" data-empty="当前站点还没有实时文章。完成一次采集后会自动刷新。"></ul>
+            </div>
+          </section>
+
+          <section class="card section">
+            <div class="section-head">
+              <div>
+                <h3 class="section-title">已保存文件</h3>
+                <p class="section-note">来自 <code>data/&lt;site&gt;/papers/</code>，支持预览、打开和删除。</p>
+              </div>
+              <small id="pageInfo">第 1 / 1 页</small>
+            </div>
+            <div class="scroll-panel">
+              <ul id="filesList" class="data-list" data-empty="当前站点还没有保存文件。采集成功后，这里会出现 Markdown 结果。"></ul>
+            </div>
+            <div class="footer-nav">
+              <span class="item-meta">分页浏览当前站点保存结果</span>
+              <div class="footer-actions">
+                <button id="prevPage" class="btn btn-secondary">上一页</button>
+                <button id="nextPage" class="btn btn-secondary">下一页</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/app.js"></script>
   </body>
-  </html>
+</html>

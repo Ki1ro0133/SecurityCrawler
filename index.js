@@ -1,87 +1,90 @@
-const fs = require('fs');
-const path = require('path');
-const XianzhiCrawler = require('./src/XianzhiCrawler');
+const { createCrawlerApp } = require('./src/core/app');
+
+function toKebabCase(value) {
+  return String(value || '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/[_\s]+/g, '-')
+    .toLowerCase();
+}
+
+function parseArgv(args) {
+  const out = {};
+  for (const arg of args) {
+    if (!arg.startsWith('--')) continue;
+    const [key, value] = arg.replace(/^--/, '').split('=');
+    out[key] = value === undefined ? true : value;
+  }
+  return out;
+}
+
+function envGet(key) {
+  const candidates = [
+    key,
+    key.toUpperCase(),
+    key.replace(/-/g, '_').toUpperCase(),
+    key.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase(),
+  ];
+  for (const candidate of candidates) {
+    if (process.env[candidate] !== undefined) return process.env[candidate];
+  }
+  return undefined;
+}
 
 async function main() {
-  const argv = process.argv.slice(2);
+  const args = parseArgv(process.argv.slice(2));
+  const app = createCrawlerApp(__dirname);
 
-  const parseArgv = (args) => {
-    const out = {};
-    for (const a of args) {
-      if (!a.startsWith('--')) continue;
-      const [k, v] = a.replace(/^--/, '').split('=');
-      out[k] = v === undefined ? true : v;
-    }
-    return out;
-  };
-  const args = parseArgv(argv);
-
-  let fileCfg = {};
-  try {
-    const cfgPath = path.join(__dirname, 'config.json');
-    if (fs.existsSync(cfgPath)) {
-      const raw = fs.readFileSync(cfgPath, 'utf8');
-      fileCfg = JSON.parse(raw);
-    }
-  } catch (e) {
-    console.log('读取 config.json 失败，忽略:', e.message);
-  }
-
-  const envGet = (key) => {
-    const cased = [
-      key,
-      key.toUpperCase(),
-      key.replace(/-/g, '_').toUpperCase(),
-      key.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase(),
-    ];
-    for (const k of cased) {
-      if (process.env[k] !== undefined) return process.env[k];
-    }
-    return undefined;
-  };
-
-  const pick = (keys, fallback) => {
-    for (const k of keys) {
-      if (args[k] !== undefined) return args[k];
-      const envVal = envGet(k);
+  const fromCliOrEnv = (keys, fallback) => {
+    for (const key of keys) {
+      if (args[key] !== undefined) return args[key];
+      const envVal = envGet(key);
       if (envVal !== undefined) return envVal;
-      if (fileCfg[k] !== undefined) return fileCfg[k];
     }
     return fallback;
   };
 
-  const imagesOnlyRaw = args['images-only'] !== undefined ? args['images-only'] : pick(['imagesOnly'], false);
-  const imagesOnly = imagesOnlyRaw === true || imagesOnlyRaw === 'true';
-  const imageRaw = args['image'] !== undefined ? args['image'] : pick(['image'], false);
-  const image = imageRaw === true || imageRaw === 'true';
-  const maxPagesRaw = pick(['maxPages', 'max-pages'], 1);
-  const maxPages = Number(maxPagesRaw) > 0 ? Number(maxPagesRaw) : 1;
-  const startDate = pick(['startDate', 'start-date'], undefined);
-  const endDate = pick(['endDate', 'end-date'], undefined);
-  const targetDate = pick(['targetDate', 'target-date'], undefined);
-  const concurrencyRaw = pick(['concurrency', 'conc', 'parallel'], 3);
-  const concurrency = Number(concurrencyRaw) > 0 ? Number(concurrencyRaw) : 3;
+  const rawOptions = {};
+  const site = fromCliOrEnv(['site'], undefined);
+  const plugin = app.getPlugin(site);
+  const startDate = fromCliOrEnv(['startDate', 'start-date'], undefined);
+  const endDate = fromCliOrEnv(['endDate', 'end-date'], undefined);
+  const targetDate = fromCliOrEnv(['targetDate', 'target-date'], undefined);
+  const maxPages = fromCliOrEnv(['maxPages', 'max-pages'], undefined);
+  const concurrency = fromCliOrEnv(['concurrency', 'conc', 'parallel'], undefined);
+  const image = fromCliOrEnv(['image'], undefined);
+  const fetchFullContent = fromCliOrEnv(['fetchFullContent', 'fetch-full-content'], undefined);
+  const imagesOnly = args['images-only'] !== undefined ? args['images-only'] : fromCliOrEnv(['imagesOnly'], undefined);
 
-  const crawler = new XianzhiCrawler({
-    fetchFullContent: !imagesOnly,
-    maxPages,
-    imagesOnly,
-    image,
-    startDate,
-    endDate,
-    targetDate,
-    concurrency,
+  if (site !== undefined) rawOptions.site = site;
+  if (startDate !== undefined) rawOptions.startDate = startDate;
+  if (endDate !== undefined) rawOptions.endDate = endDate;
+  if (targetDate !== undefined) rawOptions.targetDate = targetDate;
+  if (maxPages !== undefined) rawOptions.maxPages = maxPages;
+  if (concurrency !== undefined) rawOptions.concurrency = concurrency;
+  if (image !== undefined) rawOptions.image = image;
+  if (fetchFullContent !== undefined) rawOptions.fetchFullContent = fetchFullContent;
+  if (imagesOnly !== undefined) rawOptions.imagesOnly = imagesOnly;
+
+  const customFields = Array.isArray(plugin.meta.customFields) ? plugin.meta.customFields : [];
+  for (const field of customFields) {
+    const fieldKey = field && field.key;
+    if (!fieldKey) continue;
+    const fieldValue = fromCliOrEnv([fieldKey, toKebabCase(fieldKey)], undefined);
+    if (fieldValue !== undefined) rawOptions[fieldKey] = fieldValue;
+  }
+
+  const execution = app.createRun({
+    site: rawOptions.site,
+    rawOptions,
   });
+
   console.log('配置:', {
-    imagesOnly,
-    image,
-    maxPages,
-    startDate,
-    endDate,
-    targetDate,
-    concurrency,
+    site: execution.site,
+    siteName: execution.plugin.meta.name,
+    ...execution.options,
   });
-  await crawler.run();
+
+  await execution.runner.run();
 }
 
 if (require.main === module) {

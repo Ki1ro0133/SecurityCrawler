@@ -1,10 +1,86 @@
 {
-  "startDate": null,
-  "endDate": null,
-  "targetDate": null,
-  "maxPages": 1,
-  "imagesOnly": false,
-  "image": true,
-  "fetchFullContent": true,
-  "concurrency": 3
+  "defaultSite": "xianzhi",
+  "plugins": {
+    "xianzhi": {
+      "enabled": true
+    },
+    "ctfiot": {
+      "enabled": true
+    },
+    "freebuf": {
+      "enabled": true
+    },
+    "huoxian": {
+      "enabled": true
+    },
+    "anquanke": {
+      "enabled": true
+    },
+    "butian": {
+      "enabled": true
+    },
+    "tttang": {
+      "enabled": true
+    },
+    "seebug": {
+      "enabled": true
+    },
+    "example": {
+      "enabled": false
+    }
+  },
+  "crawlerDefaults": {
+    "maxPages": 1,
+    "imagesOnly": false,
+    "image": true,
+    "fetchFullContent": true,
+    "concurrency": 3
+  },
+  "sites": {
+    "xianzhi": {
+      "startDate": null,
+      "endDate": null,
+      "targetDate": null
+    },
+    "ctfiot": {
+      "startDate": null,
+      "endDate": null,
+      "targetDate": null
+    },
+    "freebuf": {
+      "startDate": null,
+      "endDate": null,
+      "targetDate": null
+    },
+    "huoxian": {
+      "startDate": null,
+      "endDate": null,
+      "targetDate": null
+    },
+    "anquanke": {
+      "startDate": null,
+      "endDate": null,
+      "targetDate": null
+    },
+    "butian": {
+      "startDate": null,
+      "endDate": null,
+      "targetDate": null
+    },
+    "tttang": {
+      "startDate": null,
+      "endDate": null,
+      "targetDate": null
+    },
+    "seebug": {
+      "startDate": null,
+      "endDate": null,
+      "targetDate": null
+    },
+    "example": {
+      "startDate": null,
+      "endDate": null,
+      "targetDate": null
+    }
+  }
 }

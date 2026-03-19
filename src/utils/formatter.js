@@ -19,9 +19,17 @@ function generateFileName(article) {
   return `${fileName}.md`;
 }
 
-function generateSingleArticleMarkdown(article) {
+function generateSingleArticleMarkdown(article, siteMeta = {}) {
+  const sourceName = siteMeta.name || article.site || '站点';
   const safeTitle = (article.title || '未知标题').trim();
   let markdown = `# ${safeTitle}\n\n`;
+
+  markdown += `> 站点: ${sourceName}  \n`;
+  markdown += `> 分类: ${article.category || ''}  \n`;
+  markdown += `> 作者: ${article.author || ''}  \n`;
+  markdown += `> 发布时间: ${article.publishTime || ''}  \n`;
+  markdown += `> 原文链接: ${article.link || ''}  \n`;
+  markdown += `> 爬取时间: ${new Date(article.extractedAt).toLocaleString('zh-CN')}  \n\n`;
 
   if (article.content && article.content) {
     const formattedContent = article.content;
@@ -32,8 +40,8 @@ function generateSingleArticleMarkdown(article) {
   }
 
   markdown += `---\n\n`;
-  markdown += `> 本文档由先知社区爬虫自动生成  \n`;
-  markdown += `> 原文链接: ${article.link}  \n`;
+  markdown += `> 本文档由 ${sourceName} 爬虫插件自动生成  \n`;
+  markdown += `> 原文链接: ${article.link || ''}  \n`;
   markdown += `> 爬取时间: ${new Date(article.extractedAt).toLocaleString('zh-CN')}  \n`;
 
   const parts = markdown.split(/(```[\s\S]*?```)/g);
@@ -49,13 +57,17 @@ function generateSingleArticleMarkdown(article) {
   return normalizedMarkdown;
 }
 
-function generateIndexMarkdown(articles, baseUrl, generateFileNameFn = generateFileName) {
+function generateIndexMarkdown(articles, baseUrl, generateFileNameFn = generateFileName, siteMeta = {}) {
   const sortedArticles = [...articles].sort((a, b) => new Date(b.publishTime) - new Date(a.publishTime));
+  const sourceName = siteMeta.name || '站点';
+  const sourceUrl = siteMeta.baseUrl || baseUrl || '';
 
-  let markdown = `# 先知社区文章合集\n\n`;
+  let markdown = `# ${sourceName} 文章合集\n\n`;
   markdown += `> 🕒 爬取时间: ${new Date().toLocaleString('zh-CN')}\n`;
   markdown += `> 📊 文章数量: ${articles.length} 篇\n`;
-  markdown += `> 🔗 来源: [先知社区](${baseUrl})\n\n`;
+  markdown += sourceUrl
+    ? `> 🔗 来源: [${sourceName}](${sourceUrl})\n\n`
+    : `> 🔗 来源: ${sourceName}\n\n`;
 
   const categoryStats = {};
   articles.forEach(article => {

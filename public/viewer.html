@@ -4,87 +4,421 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Markdown 查看器</title>
-    <base href="/papers/">
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap');
+
       :root {
-        --bg: #0f172a;
-        --panel-bg: #111827;
-        --text: #e5e7eb;
-        --muted: #9ca3af;
-        --border: #1f2937;
-        --accent: #3b82f6;
-        --grad-start: #0ea5e9;
-        --grad-end: #3b82f6;
-        --code-bg: #0b1220;
+        color-scheme: light;
+        --bg: #f4f0e8;
+        --bg-2: #e9e1d4;
+        --panel: rgba(252, 249, 244, 0.86);
+        --panel-strong: rgba(255, 252, 246, 0.96);
+        --text: #1f1a15;
+        --muted: #786d63;
+        --line: rgba(63, 49, 35, 0.12);
+        --line-strong: rgba(63, 49, 35, 0.2);
+        --accent: #866547;
+        --accent-2: #2f5069;
+        --shadow: 0 26px 60px rgba(62, 45, 27, 0.08);
+        --code-bg: rgba(134, 101, 71, 0.08);
       }
-      :root[data-theme="light"] {
-        --bg: #f8fafc;
-        --panel-bg: #ffffff;
-        --text: #0f172a;
-        --muted: #475569;
-        --border: #e2e8f0;
-        --accent: #2563eb;
-        --grad-start: #93c5fd;
-        --grad-end: #60a5fa;
-        --code-bg: #f3f4f6;
+
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #13110f;
+        --bg-2: #181614;
+        --panel: rgba(27, 24, 22, 0.88);
+        --panel-strong: rgba(34, 31, 28, 0.96);
+        --text: #f2ece3;
+        --muted: #ab9d90;
+        --line: rgba(242, 236, 227, 0.08);
+        --line-strong: rgba(242, 236, 227, 0.14);
+        --accent: #d3b08d;
+        --accent-2: #95b4cf;
+        --shadow: 0 30px 80px rgba(0, 0, 0, 0.32);
+        --code-bg: rgba(211, 176, 141, 0.1);
       }
-      body { font-family: -apple-system, system-ui, Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
-      .topbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: linear-gradient(90deg, var(--grad-start), var(--grad-end)); color: #fff; }
-      .brand { font-size: 18px; font-weight: 600; }
-      .container { max-width: 960px; margin: 0 auto; padding: 20px; }
-      .panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-      .layout { display: grid; grid-template-columns: minmax(0, 700px) 220px; gap: 16px; }
-      @media (max-width: 900px) {
-        .layout { grid-template-columns: 1fr; }
-        .toc-panel { display: none; }
+
+      * {
+        box-sizing: border-box;
       }
-      .btn { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-bg); color: var(--text); cursor: pointer; }
-      .btn-primary { background: var(--accent); color: #fff; border-color: #2563eb; }
-      .md-viewer { line-height: 1.8; word-wrap: break-word; overflow-wrap: anywhere; }
-      .md-viewer h1, .md-viewer h2, .md-viewer h3 { margin-top: 16px; }
-      .md-viewer pre { background: var(--code-bg); padding: 10px; overflow: auto; border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
-      .md-viewer code { background: var(--code-bg); padding: 2px 6px; border-radius: 6px; white-space: pre-wrap; word-break: break-word; }
-      .md-viewer a { color: var(--accent); }
-      /* 表格基础样式（GFM） */
-      .md-viewer table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-      .md-viewer th, .md-viewer td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
-      .md-viewer thead th { background: rgba(59,130,246,0.12); }
-      .md-viewer tbody tr:nth-child(odd) { background: rgba(148,163,184,0.06); }
-      .md-viewer img { max-width: 100%; height: auto; display: block; margin: 8px auto; border: 2px dashed var(--accent); border-radius: 8px; }
-      .title { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
-      /* 目录样式 */
-      .toc-panel { position: sticky; top: 16px; height: fit-content; }
-      .toc-title { font-size: 14px; color: var(--muted); margin-bottom: 8px; }
-      .toc-list { list-style: none; padding: 0; margin: 0; max-height: 540px; overflow: auto; }
-      .toc-list li { margin: 4px 0; }
-      .toc-list a { color: var(--text); text-decoration: none; font-size: 13px; }
-      .toc-list a:hover { text-decoration: underline; color: var(--accent); }
-      .toc-item.level-h1 a { font-weight: 600; }
-      .toc-item.level-h2 a { padding-left: 8px; }
-      .toc-item.level-h3 a { padding-left: 16px; font-size: 12px; color: var(--muted); }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family: "Manrope", sans-serif;
+        background:
+          radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 11%, transparent), transparent 28%),
+          linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 34px 34px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.2), transparent 84%);
+      }
+
+      .shell {
+        position: relative;
+        z-index: 1;
+        width: min(1360px, calc(100vw - 28px));
+        margin: 18px auto 32px;
+      }
+
+      .topbar,
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        background: var(--panel);
+        backdrop-filter: blur(18px);
+        box-shadow: var(--shadow);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 20px;
+      }
+
+      .topbar h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .topbar p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .viewer-head {
+        padding: 24px 26px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .viewer-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .viewer-label::before {
+        content: "";
+        width: 28px;
+        height: 1px;
+        background: currentColor;
+      }
+
+      .title {
+        max-width: 900px;
+        margin-top: 14px;
+        font-family: "Instrument Serif", serif;
+        font-size: clamp(30px, 4vw, 52px);
+        line-height: 0.98;
+        letter-spacing: -0.04em;
+        color: var(--text);
+      }
+
+      .viewer-meta {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .md-viewer {
+        max-width: 920px;
+        padding: 30px 26px 34px;
+        line-height: 1.9;
+        word-wrap: break-word;
+        overflow-wrap: anywhere;
+      }
+
+      .md-viewer > :first-child {
+        margin-top: 0;
+      }
+
+      .md-viewer h1,
+      .md-viewer h2,
+      .md-viewer h3 {
+        margin-top: 1.75em;
+        margin-bottom: 0.72em;
+        font-family: "Instrument Serif", serif;
+        font-weight: 400;
+        letter-spacing: -0.03em;
+        scroll-margin-top: 22px;
+      }
+
+      .md-viewer h1 {
+        font-size: clamp(30px, 4vw, 46px);
+        line-height: 1.03;
+      }
+
+      .md-viewer h2 {
+        font-size: 29px;
+      }
+
+      .md-viewer h3 {
+        font-size: 22px;
+      }
+
+      .md-viewer p,
+      .md-viewer li,
+      .md-viewer blockquote,
+      .md-viewer td,
+      .md-viewer th {
+        font-size: 15px;
+      }
+
+      .md-viewer ul,
+      .md-viewer ol {
+        padding-left: 1.35rem;
+      }
+
+      .md-viewer pre {
+        overflow: auto;
+        padding: 16px 18px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: var(--code-bg);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .md-viewer code {
+        padding: 2px 7px;
+        border-radius: 8px;
+        background: var(--code-bg);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .md-viewer a {
+        color: var(--accent-2);
+      }
+
+      .md-viewer blockquote {
+        margin: 18px 0;
+        padding: 6px 0 6px 18px;
+        border-left: 3px solid var(--accent);
+        color: var(--muted);
+      }
+
+      .md-viewer table {
+        width: 100%;
+        margin: 18px 0;
+        border-collapse: collapse;
+      }
+
+      .md-viewer th,
+      .md-viewer td {
+        padding: 11px 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+
+      .md-viewer thead th {
+        background: color-mix(in srgb, var(--accent) 8%, transparent);
+      }
+
+      .md-viewer img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 20px auto;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+      }
+
+      .toc-panel {
+        position: sticky;
+        top: 18px;
+        height: fit-content;
+        padding: 22px;
+      }
+
+      .toc-panel h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .toc-panel p {
+        margin: 8px 0 16px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .toc-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 6px;
+        max-height: 72vh;
+        overflow: auto;
+      }
+
+      .toc-list:empty::before {
+        content: attr(data-empty);
+        display: block;
+        padding: 10px 2px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .toc-list a {
+        display: block;
+        padding: 9px 12px;
+        border-radius: 12px;
+        color: var(--text);
+        text-decoration: none;
+        font-size: 13px;
+        line-height: 1.5;
+        transition: background .18s ease, color .18s ease, transform .18s ease;
+      }
+
+      .toc-list a:hover {
+        background: color-mix(in srgb, var(--accent) 8%, transparent);
+        color: var(--accent-2);
+        transform: translateX(2px);
+      }
+
+      .toc-item.level-h1 a {
+        font-weight: 700;
+      }
+
+      .toc-item.level-h2 a {
+        padding-left: 22px;
+      }
+
+      .toc-item.level-h3 a {
+        padding-left: 34px;
+        color: var(--muted);
+      }
+
+      .btn {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel-strong);
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 700;
+        transition: transform .18s ease, border-color .18s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+        border-color: var(--line-strong);
+      }
+
+      .btn-primary {
+        background: var(--text);
+        color: var(--panel-strong);
+        border-color: transparent;
+      }
+
+      @media (max-width: 1080px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .toc-panel {
+          position: static;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .shell {
+          width: min(100vw - 16px, 100%);
+          margin-top: 8px;
+        }
+
+        .topbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .actions {
+          justify-content: space-between;
+          flex-wrap: wrap;
+        }
+
+        .viewer-head,
+        .md-viewer,
+        .toc-panel {
+          padding: 18px;
+        }
+      }
     </style>
   </head>
   <body>
-    <div class="topbar">
-      <div class="brand">Markdown 查看器</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button id="backBtn" class="btn">返回首页</button>
-        <button id="themeToggle" class="btn">切换主题</button>
-      </div>
-    </div>
-    <div class="container">
-      <div class="layout">
-        <div class="panel">
-          <div id="viewerTitle" class="title">正在加载...</div>
-          <div id="viewerContent" class="md-viewer"></div>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Markdown Viewer</h1>
+          <p>阅读落盘结果、查看目录、快速回到控制台。</p>
         </div>
+        <div class="actions">
+          <button id="backBtn" class="btn">返回首页</button>
+          <button id="themeToggle" class="btn btn-primary">切换主题</button>
+        </div>
+      </header>
+
+      <section class="layout">
+        <article class="panel viewer-panel">
+          <div class="viewer-head">
+            <div class="viewer-label">Document</div>
+            <div id="viewerTitle" class="title">正在加载...</div>
+            <div class="viewer-meta">保留长文阅读节奏与章节导航，适合回看采集结果、检查正文结构与图片本地化效果。</div>
+          </div>
+          <div id="viewerContent" class="md-viewer"></div>
+        </article>
+
         <aside class="panel toc-panel">
-          <div class="toc-title">目录</div>
-          <ul id="tocList" class="toc-list"></ul>
+          <h2>目录</h2>
+          <p>自动提取一级到三级标题，方便在长文里快速定位章节。</p>
+          <ul id="tocList" class="toc-list" data-empty="当前文档没有可提取的标题目录。"></ul>
         </aside>
-      </div>
-    </div>
+      </section>
+    </main>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="/viewer.js"></script>
   </body>
-  </html>
+</html>

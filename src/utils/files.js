@@ -42,6 +42,7 @@ function writeArticleMarkdown({ article, outputDir, siteMeta }) {
 
 function writeArticlesManifest({ articles, outputDir }) {
   const manifestPath = path.join(outputDir, 'articles.json');
+  ensureDir(outputDir);
   const serializedArticles = (articles || []).map((article) => ({
     site: article.site,
     title: article.title || '',
@@ -59,6 +60,7 @@ function writeArticlesManifest({ articles, outputDir }) {
 function writeFinalSummaryAndFailures({ articles, failures, outputDir, siteMeta }) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const finalIndexPath = path.join(outputDir, `SUMMARY-${timestamp}.md`);
+  ensureDir(outputDir);
   const indexContent = generateIndexMarkdown(articles, siteMeta.baseUrl, generateFileName, siteMeta);
   fs.writeFileSync(finalIndexPath, indexContent, 'utf8');
 
